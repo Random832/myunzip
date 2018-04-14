@@ -50,8 +50,16 @@ def process_file(zfn, opts):
         if opts.destdir:
             mkdir(opts.destdir)
         for r in z.infolist():
-            rfn = r.filename
-            fn = rfn.encode('cp437').decode(opts.encoding)
+            if opts.encoding != 'cp437':
+                # zipfile module gives us no hooks for this
+                try:
+                    fn = r.filename.encode('cp437').decode(opts.encoding)
+                except UnicodeEncodeError:
+                    print("Warning: could not decode %r as cp437" % r.filename)
+                    fn = r.filename
+            else:
+                # Simpler logic, and can't screw up.
+                fn = r.filename
             if opts.mode == 'l':
                 print(fn)
                 continue

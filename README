@@ -1,0 +1,7 @@
+Just my personal unzip tool, to take care of a few features that
+other tools don't have or don't work right.
+
+- Transcodes non-Unicode filenames from any encoding instead of
+  assuming CP437
+- Allows "retract" operation, to remove all extracted files that
+  haven't been modified.

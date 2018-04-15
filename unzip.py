@@ -2,6 +2,8 @@
 import os
 import sys
 import zipfile
+import glob
+import fnmatch
 A_DIR = 0x10
 
 def main():
@@ -10,12 +12,15 @@ def main():
     parser.add_argument('-e', '--encoding', default='cp437')
     parser.add_argument('-l', '--listonly', action='store_const', dest='mode', const='l')
     parser.add_argument('-x', '--extract', action='store_const', dest='mode', const='x')
-    parser.add_argument('-r', '--retract', action='store_const', dest='mode', const='r')
+    parser.add_argument('-r', '--retract', action='store_const', dest='mode', const='r', help='Remove extracted files. Use --dry-run to print a list of files that would be removed.')
     parser.add_argument('-d', '--destdir', type=str)
     parser.add_argument('-o', '--overwrite', action='store_const', dest='omode', const=True)
     parser.add_argument('-n', '--never-overwrite', action='store_const', dest='omode', const=False)
-    parser.add_argument('file', nargs=1)
-    parser.add_argument('pattern', nargs='*', default=['*'])
+    parser.add_argument('zipfile', nargs=1, help='May be a wildcard. Suppress with --no-wildzip.')
+    parser.add_argument('file', nargs='*', default=None, help='May be wildcards. Suppress with --no-wildfile.')
+    parser.add_argument('--no-wildzip', dest='wildzip', action='store_false', help=argparse.SUPPRESS)
+    parser.add_argument('--no-wildfile', dest='wildfile', action='store_false', help=argparse.SUPPRESS)
+    parser.add_argument('--dry-run', action='store_true', help=argparse.SUPPRESS) # rezip only
     opts = parser.parse_args()
     if not opts.mode:
         if 'unzip' in sys.argv[0]: opts.mode = 'x'
@@ -23,8 +28,16 @@ def main():
         else:
             print("Unknown mode, listing")
             opts.mode = 'l'
-    for arg in opts.file:
-        process_file(arg, opts)
+    for arg in opts.zipfile:
+        if opts.wildzip:
+            if not arg.endswith('.zip'):
+                yn = input("Did you mean %s*.zip? " % arg)
+                if yn[:1].lower() == 'y':
+                    arg = arg+'*.zip'
+            for aarg in glob.glob(arg):
+                process_file(aarg, opts)
+        else:
+            process_file(arg, opts)
 
 def process_file(zfn, opts):
     rzdirs = set()
@@ -60,6 +73,15 @@ def process_file(zfn, opts):
             else:
                 # Simpler logic, and can't screw up.
                 fn = r.filename
+            if opts.file:
+                if opts.wildfile:
+                    for spec in opts.file:
+                        if fnmatch.fnmatch(fn, spec):
+                            break
+                    else:
+                        continue
+                else:
+                    if fn not in opts.file: continue
             if opts.mode == 'l':
                 print(fn)
                 continue
@@ -87,16 +109,23 @@ def process_file(zfn, opts):
                 except FileNotFoundError:
                     continue
                 if z.read(r.filename) == rf.read():
-                    os.unlink(dfn)
+                    if not opts.dry_run:
+                        os.unlink(dfn)
                     print(fn)
                 continue
     if opts.mode == 'r':
         for fn in sorted(rzdirs, key = lambda x: -len(x)):
-            try:
-                os.rmdir(fn)
-                print(fn)
-            except OSError:
-                continue
+            if opts.dry_run:
+                # TODO check for empty directory
+                if os.path.isdir(fn): # what about symlinks
+                    print(fn)
+                    continue
+            else:
+                try:
+                    os.rmdir(fn)
+                    print(fn)
+                except OSError:
+                    continue
 
 if __name__ == '__main__':
     main()

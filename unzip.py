@@ -6,6 +6,7 @@ import glob
 import fnmatch
 A_DIR = 0x10
 
+
 def main():
     import argparse
     parser = argparse.ArgumentParser()
@@ -20,11 +21,13 @@ def main():
     parser.add_argument('file', nargs='*', default=None, help='May be wildcards. Suppress with --no-wildfile.')
     parser.add_argument('--no-wildzip', dest='wildzip', action='store_false', help=argparse.SUPPRESS)
     parser.add_argument('--no-wildfile', dest='wildfile', action='store_false', help=argparse.SUPPRESS)
-    parser.add_argument('--dry-run', action='store_true', help=argparse.SUPPRESS) # rezip only
+    parser.add_argument('--dry-run', action='store_true', help=argparse.SUPPRESS)  # rezip only
     opts = parser.parse_args()
     if not opts.mode:
-        if 'unzip' in sys.argv[0]: opts.mode = 'x'
-        elif 'rezip' in sys.argv[0]: opts.mode = 'r'
+        if 'unzip' in sys.argv[0]:
+            opts.mode = 'x'
+        elif 'rezip' in sys.argv[0]:
+            opts.mode = 'r'
         else:
             print("Unknown mode, listing")
             opts.mode = 'l'
@@ -33,21 +36,25 @@ def main():
             if not arg.endswith('.zip'):
                 yn = input("Did you mean %s*.zip? " % arg)
                 if yn[:1].lower() == 'y':
-                    arg = arg+'*.zip'
+                    arg = arg + '*.zip'
             for aarg in glob.glob(arg):
                 process_file(aarg, opts)
         else:
             process_file(arg, opts)
 
+
 def process_file(zfn, opts):
     rzdirs = set()
+
     def mkdir(dn):
         if opts.mode == 'x' and not os.path.isdir(dn):
             os.makedirs(dn)
         elif opts.mode == 'r':
             rzdirs.add(dn)
+
     def confirm(dfn):
-        if opts.omode is not None: return opts.omode
+        if opts.omode is not None:
+            return opts.omode
         inp = input("Overwrite %r? " % dfn).lower()
         if inp == 'y':
             return True
@@ -81,7 +88,8 @@ def process_file(zfn, opts):
                     else:
                         continue
                 else:
-                    if fn not in opts.file: continue
+                    if fn not in opts.file:
+                        continue
             if opts.mode == 'l':
                 print(fn)
                 continue
@@ -97,7 +105,8 @@ def process_file(zfn, opts):
                 oyes = False
                 if os.path.exists(dfn):
                     oyes = confirm(dfn)
-                    if not oyes: continue
+                    if not oyes:
+                        continue
                 print(fn)
                 wf = open(dfn, 'wb' if oyes else 'xb')
                 wf.write(z.read(r.filename))
@@ -114,10 +123,10 @@ def process_file(zfn, opts):
                     print(fn)
                 continue
     if opts.mode == 'r':
-        for fn in sorted(rzdirs, key = lambda x: -len(x)):
+        for fn in sorted(rzdirs, key=lambda x: -len(x)):
             if opts.dry_run:
                 # TODO check for empty directory
-                if os.path.isdir(fn): # what about symlinks
+                if os.path.isdir(fn):  # what about symlinks
                     print(fn)
                     continue
             else:
@@ -126,6 +135,7 @@ def process_file(zfn, opts):
                     print(fn)
                 except OSError:
                     continue
+
 
 if __name__ == '__main__':
     main()

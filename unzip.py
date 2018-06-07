@@ -80,6 +80,12 @@ def process_file(zfn, opts):
             else:
                 # Simpler logic, and can't screw up.
                 fn = r.filename
+            # Be paranoid about path traversal components
+            parts = fn.split('/')
+            for i, part in enumerate(parts):
+                if (i, part) == (0, ''): parts[i] = 'SLASH'
+                elif part == '..': parts[i] = 'DOTDOT'
+            fn = '/'.join(parts)
             if opts.file:
                 if opts.wildfile:
                     for spec in opts.file:

@@ -82,11 +82,11 @@ def process_file(zfn, opts):
                 # Simpler logic, and can't screw up.
                 fn = r.filename
             # Be paranoid about path traversal components
-            parts = fn.split('/')
+            parts = os.path.normpath(fn).split(os.sep)
             for i, part in enumerate(parts):
-                if (i, part) == (0, ''): parts[i] = 'SLASH'
-                elif part == '..': parts[i] = 'DOTDOT'
-            fn = '/'.join(parts)
+                if (i, part) == (0, ''): parts[i] = 'ROOT'
+                elif part == '..': parts[i] = 'UP'
+            fn = os.sep.join(parts)
             if opts.file:
                 if opts.wildfile:
                     for spec in opts.file:

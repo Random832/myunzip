@@ -47,6 +47,7 @@ def process_file(zfn, opts):
     rzdirs = set()
 
     def mkdir(dn):
+        if not dn: return
         if opts.mode == 'x' and not os.path.isdir(dn):
             os.makedirs(dn)
         elif opts.mode == 'r':
